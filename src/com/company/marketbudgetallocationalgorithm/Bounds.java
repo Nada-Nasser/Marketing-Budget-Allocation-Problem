@@ -7,11 +7,11 @@ public class Bounds {
     boolean hasUpper;
     boolean hasLower;
 
-    public Bounds(float upperBound, float lowerBound , boolean hasUpper , boolean hasLower) {
+    public Bounds(float lowerBound, float upperBound , boolean hasLower , boolean hasUpper) {
         this.upperBound = upperBound;
         this.lowerBound = lowerBound;
-        this.hasUpper = false;
-        this.hasLower = false;
+        this.hasUpper = hasUpper;
+        this.hasLower = hasLower;
     }
 
 

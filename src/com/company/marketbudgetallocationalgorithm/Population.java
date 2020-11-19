@@ -1,8 +1,10 @@
 package com.company.marketbudgetallocationalgorithm;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Population {
 
@@ -26,7 +28,7 @@ public class Population {
 
 
     public static void initializeAlgorithm(){
-        nIterations = 1000;
+        nIterations = 0;
         nPopulation = 100;
         nParents = 10;
 
@@ -42,14 +44,18 @@ public class Population {
                 ArrayList<Chromosome> selectedParents = selection();// tournament selection
                 ArrayList<Chromosome> offspringChromosomes = crossOver(selectedParents); // 2-point crossover
 
-                /*
+                for (Chromosome chromosome : offspringChromosomes)
+                {
+                    System.out.println(chromosome.toString());
+                }
+
+                /**
                 mutation(offspringChromosomes);//TODO both uniform and non-uniform mutation.
                 Replacement(offspringChromosomes);//TODO elitist replacement.
                 */
             } while (i <= nIterations);
             finalOutput();
         }
-
     }
 
     private static void finalOutput() {
@@ -61,12 +67,59 @@ public class Population {
     static private void mutation(ArrayList<Chromosome> offspringChromosomes) {
     }
 
+    /**
+     * @implNote 2-point crossover
+     * @return ArrayList<Chromosome>, contains the result of cross over between the selected parents arraylist
+     * **/
     static private ArrayList<Chromosome> crossOver(ArrayList<Chromosome> selectedParents) {
-        return null;
+        ArrayList<Chromosome> offspringChromosomes = new ArrayList<Chromosome>();
+
+        for(int i = 0  ; i <nParents/2 ; i+=2) // cross over between i and i+1
+        {
+            Random r = new Random();
+            int xc = r.nextInt(selectedParents.size());
+            float rc =  r.nextFloat();
+
+            if(rc <= Pc) //then Cross over occurs
+            {
+        //        System.out.println("Apply Cross Over");
+                //perform crossover at Xc using  i and i+1 parents
+                ArrayList<Chromosome> crossoverOutput = selectedParents.get(i)
+                        .crossOver(selectedParents.get(i+1), xc);
+                offspringChromosomes.addAll(crossoverOutput);
+            }
+            else //then No CrossOver
+            {
+         //       System.out.println("DON'T Apply Cross Over");
+                offspringChromosomes.add(selectedParents.get(i));
+                offspringChromosomes.add(selectedParents.get(i+1));
+            }
+        }
+        return offspringChromosomes;
     }
 
+    /**
+     * @implNote
+     * 1- selecting 2 Chromosomes from the population randomly
+     * 2- select the best of them (max fitness value) to be as one of selectedParents
+     * 3- repeat 1,2 until you fill selectedParents array (selectedParents = nParents)
+     *
+     * @return selected parents from population Chromosomes, using 2-way tournament selection method
+     * **/
     static  private ArrayList<Chromosome> selection() {
-        return null;
+        ArrayList<Chromosome> selectedParents = new ArrayList<>();
+        while(selectedParents.size() < nParents)
+        {
+            Random rand = new Random();
+            int i = rand.nextInt(populationChromosomes.size());
+            int j = rand.nextInt(populationChromosomes.size());
+
+            Chromosome parentChromosome = populationChromosomes.get(i).getFitnessValue() > populationChromosomes.get(j).getFitnessValue()
+                                         ?populationChromosomes.get(i) : populationChromosomes.get(j);
+            selectedParents.add(parentChromosome);
+        }
+
+        return selectedParents;
     }
 
     static private void buildChromosomes() {
@@ -89,14 +142,14 @@ public class Population {
             }
 
             Chromosome chromosome = new Chromosome(genes); // in the constructor, the fitness value evaluated also
-            System.out.println(chromosome.toString());
+         //   System.out.println(chromosome.toString());
             populationChromosomes.add(chromosome);
         }
     }
 
     static  private void readInputs(){
 
-        totalMarketingBudget = 100;
+        totalMarketingBudget = 1000;
         nMarketingChannels = 4;
 
         investmentChannels = new ArrayList<>();
@@ -113,9 +166,9 @@ public class Population {
 
         investmentBoundsHashMap = new HashMap<>();
         investmentBoundsHashMap.put("TV" , new Bounds(0.027f,0.58f,true,true));
-        investmentBoundsHashMap.put("Google" , new Bounds(0.205f,0.0f,true,false));
-        investmentBoundsHashMap.put("Twitter" , new Bounds(0.0f,0.18f,false,true));
-        investmentBoundsHashMap.put("Facebook" , new Bounds(0.10f,0.0f,true,false));
+        investmentBoundsHashMap.put("Google" , new Bounds(0.205f,Float.POSITIVE_INFINITY,true,false));
+        investmentBoundsHashMap.put("Twitter" , new Bounds(Float.NEGATIVE_INFINITY,0.18f,false,true));
+        investmentBoundsHashMap.put("Facebook" , new Bounds(0.10f,Float.POSITIVE_INFINITY,true,false));
     }
 
     static  public String getChannelName(int i)
@@ -128,6 +181,15 @@ public class Population {
         return nameROIHashMap.get(channel);
     }
 
+    static  public Bounds getChannelBounds(String channel)
+    {
+        return investmentBoundsHashMap.get(channel);
+    }
+
+    static  public float getTotalMarketingBudget()
+    {
+        return totalMarketingBudget;
+    }
 
 
 }
