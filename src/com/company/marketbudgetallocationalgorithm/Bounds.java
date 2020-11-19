@@ -14,7 +14,15 @@ public class Bounds {
         this.hasLower = hasLower;
     }
 
-
+    @Override
+    public String toString() {
+        return "Bounds{" +
+                "lowerBound=" + lowerBound +
+                ", upperBound=" + upperBound +
+                ", hasLower=" + hasLower +
+                ", hasUpper=" + hasUpper +
+                '}';
+    }
 
     public float getUpperBound() {
         return upperBound;

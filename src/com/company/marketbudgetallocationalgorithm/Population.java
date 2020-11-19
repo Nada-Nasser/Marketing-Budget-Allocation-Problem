@@ -1,9 +1,6 @@
 package com.company.marketbudgetallocationalgorithm;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Population {
@@ -22,15 +19,13 @@ public class Population {
     // user inputs
     private static float totalMarketingBudget;
     private static int nMarketingChannels;
-    private static HashMap<String , Float> nameROIHashMap;
-    private static HashMap<String , Bounds> investmentBoundsHashMap;
-    private static ArrayList<String> investmentChannels;
+    private static ArrayList<InvestmentChannel> investmentChannelArrayList;
 
 
     public static void initializeAlgorithm(){
         nIterations = 0;
-        nPopulation = 100;
-        nParents = 10;
+        nPopulation = 1000;
+        nParents = 100;
 
         int nTests = 1; // TODO nTests = 20;
 
@@ -44,17 +39,21 @@ public class Population {
                 ArrayList<Chromosome> selectedParents = selection();// tournament selection
                 ArrayList<Chromosome> offspringChromosomes = crossOver(selectedParents); // 2-point crossover
 
+                // NOTE : offspringChromosomes.size != nParents
+
+                System.out.println("\nOffSpring Chromosomes:\n");
                 for (Chromosome chromosome : offspringChromosomes)
                 {
                     System.out.println(chromosome.toString());
                 }
+                System.out.println("\n===================================================\n");
 
-                /**
+
                 mutation(offspringChromosomes);//TODO both uniform and non-uniform mutation.
                 Replacement(offspringChromosomes);//TODO elitist replacement.
-                */
+
             } while (i <= nIterations);
-            finalOutput();
+            finalOutput(); // TODO
         }
     }
 
@@ -82,7 +81,6 @@ public class Population {
 
             if(rc <= Pc) //then Cross over occurs
             {
-        //        System.out.println("Apply Cross Over");
                 //perform crossover at Xc using  i and i+1 parents
                 ArrayList<Chromosome> crossoverOutput = selectedParents.get(i)
                         .crossOver(selectedParents.get(i+1), xc);
@@ -90,7 +88,6 @@ public class Population {
             }
             else //then No CrossOver
             {
-         //       System.out.println("DON'T Apply Cross Over");
                 offspringChromosomes.add(selectedParents.get(i));
                 offspringChromosomes.add(selectedParents.get(i+1));
             }
@@ -132,7 +129,7 @@ public class Population {
 
             for(int channel = 0 ; channel < nMarketingChannels; channel++) // generate random genes
             {
-                Bounds bounds = investmentBoundsHashMap.get(getChannelName(channel));
+                Bounds bounds = getChannelBounds(channel);
                 float max = bounds.hasUpper ? (bounds.getUpperBound()*remainingBudget): remainingBudget;
                 float min = bounds.hasLower ? (bounds.getLowerBound()*remainingBudget): 0.0f;
 
@@ -142,55 +139,63 @@ public class Population {
             }
 
             Chromosome chromosome = new Chromosome(genes); // in the constructor, the fitness value evaluated also
-         //   System.out.println(chromosome.toString());
             populationChromosomes.add(chromosome);
         }
     }
 
     static  private void readInputs(){
 
-        totalMarketingBudget = 1000;
-        nMarketingChannels = 4;
+        investmentChannelArrayList = new ArrayList<>();
 
-        investmentChannels = new ArrayList<>();
-        investmentChannels.add("TV");
-        investmentChannels.add("Google");
-        investmentChannels.add("Twitter");
-        investmentChannels.add("Facebook");
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter the marketing budget (in thousands):");
+        totalMarketingBudget = in.nextFloat();
+        System.out.println("\nEnter the number of marketing channels:");
+        nMarketingChannels = in.nextInt();
 
-        nameROIHashMap = new HashMap<>();
-        nameROIHashMap.put("TV" , 0.08f);
-        nameROIHashMap.put("Google" , 0.12f);
-        nameROIHashMap.put("Twitter" , 0.07f);
-        nameROIHashMap.put("Facebook" , 0.11f);
+        System.out.println("\nEnter the name and ROI (in %) of each channel separated by space:");
+        for(int i = 0 ; i < nMarketingChannels ; i++)
+        {
+            String channelName = in.next();
+            Float roi = in.nextFloat();
 
-        investmentBoundsHashMap = new HashMap<>();
-        investmentBoundsHashMap.put("TV" , new Bounds(0.027f,0.58f,true,true));
-        investmentBoundsHashMap.put("Google" , new Bounds(0.205f,Float.POSITIVE_INFINITY,true,false));
-        investmentBoundsHashMap.put("Twitter" , new Bounds(Float.NEGATIVE_INFINITY,0.18f,false,true));
-        investmentBoundsHashMap.put("Facebook" , new Bounds(0.10f,Float.POSITIVE_INFINITY,true,false));
+           investmentChannelArrayList.add(new InvestmentChannel(channelName));
+           investmentChannelArrayList.get(i).setRoi(roi/100);
+        }
+
+        System.out.println("Enter the lower (k) and upper bounds (%) of investment in each channel:" +
+                "(enter x if there is no bound)");
+        for(int i = 0 ; i < nMarketingChannels ; i++)
+        {
+           String l = in.next();
+           String u = in.next();
+           float lower = l.equalsIgnoreCase("x")? Float.NEGATIVE_INFINITY : Float.parseFloat(l)/100;
+           float upper = u.equalsIgnoreCase("x")?Float.POSITIVE_INFINITY : Float.parseFloat(u)/100;
+           Bounds bounds = new Bounds(lower,upper,!l.equalsIgnoreCase("x"),!u.equalsIgnoreCase("x"));
+
+           investmentChannelArrayList.get(i).setBounds(bounds);
+        }
+    }
+
+    static  public Bounds getChannelBounds(int channelIndex)
+    {
+        return investmentChannelArrayList.get(channelIndex).getBounds();
+    }
+
+    static  public float getChannelROIlName(int channelIndex)
+    {
+        return investmentChannelArrayList.get(channelIndex).getRoi();
     }
 
     static  public String getChannelName(int i)
     {
-        return investmentChannels.get(i);
-    }
-
-    static  public float getChannelROIlName(String channel)
-    {
-        return nameROIHashMap.get(channel);
-    }
-
-    static  public Bounds getChannelBounds(String channel)
-    {
-        return investmentBoundsHashMap.get(channel);
+        return investmentChannelArrayList.get(i).getName();
     }
 
     static  public float getTotalMarketingBudget()
     {
         return totalMarketingBudget;
     }
-
 
 }
 

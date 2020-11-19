@@ -22,8 +22,7 @@ public class Chromosome {
 
         for(Gene gene : genes)
         {
-            String channelName = Population.getChannelName(channelIndex++);
-            float channelROI = Population.getChannelROIlName(channelName);
+            float channelROI = Population.getChannelROIlName(channelIndex++);
             fitness+= (channelROI*gene.getBudget());
         }
         return fitness;
@@ -64,13 +63,7 @@ public class Chromosome {
         int[] nPoints; // length = 2
         nPoints = ThreadLocalRandom.current().ints(0, 4).distinct().limit(2).toArray();
         Arrays.sort(nPoints);
-/*
-        for(int i = 0 ; i < nPoints.length ; i++)
-        {
-            System.out.print(nPoints[i] + " ");
-        }
-        System.out.println();
-*/
+
         ArrayList<Gene> genesO1 = new ArrayList<Gene>();
         ArrayList<Gene> genesO2 = new ArrayList<Gene>();
 
@@ -104,44 +97,20 @@ public class Chromosome {
 
         for (Gene gene : genes)
         {
-            String channelName = Population.getChannelName(geneIndex);
-            Bounds bounds = Population.getChannelBounds(channelName);
-          //  System.out.println(channelName);
+            Bounds bounds = Population.getChannelBounds(geneIndex);
             if (bounds.hasUpper)
-            {
-           //     System.out.println("HAS UPPER  CONSTRAINTS");
                 if (gene.getBudget() > bounds.getUpperBound()*totalBudget)
-                {
-           //         System.out.println("UPPER BOUND CONSTRAINTS for " + channelName);
                     return false;
-                }
-                else
-                {
-           //         System.out.println(gene.getBudget()+ " < " + bounds.getUpperBound()*totalBudget);
-                }
-            }
 
             if (bounds.hasLower)
-            {
-             //   System.out.println("has LOWER CONSTRAINTS");
                 if (gene.getBudget() < bounds.getLowerBound()*totalBudget)
-                {
-            //        System.out.println("LOWER BOUND CONSTRAINTS for " + channelName);
                     return false;
-                }
-                else
-                {
-           //         System.out.println(gene.getBudget()+ " < " + bounds.getLowerBound()*totalBudget);
-                }
-            }
 
             sumBudget+= gene.getBudget();
-            geneIndex++;
             if(sumBudget > totalBudget)
-            {
-            //    System.out.println("totalBudget CONSTRAINTS");
                 return false;
-            }
+
+            geneIndex++;
         }
         return true;
     }
