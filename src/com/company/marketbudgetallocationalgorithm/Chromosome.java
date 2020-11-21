@@ -15,7 +15,7 @@ public class Chromosome {
         this.fitnessValue = calculateFitnessValue();
     }
 
-    private float calculateFitnessValue() {
+    public float calculateFitnessValue() {
         float fitness = 0.0f;
 
         int channelIndex = 0;
