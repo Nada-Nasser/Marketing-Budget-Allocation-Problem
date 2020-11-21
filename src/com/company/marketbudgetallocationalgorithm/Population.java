@@ -1,11 +1,18 @@
 package com.company.marketbudgetallocationalgorithm;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Population {
 
-    final String OUTPUT_FILE_PATH = "Output.txt";
+    static final String OUTPUTS_FILE_PATH = "outputs.txt";
+    final String BEST_OUTPUT_FILE_PATH = "best_output.txt";
 
     private static int nPopulation;
     private static int nParents;
@@ -24,45 +31,112 @@ public class Population {
     private static int nMarketingChannels, iIteration;
     private static ArrayList<InvestmentChannel> investmentChannelArrayList;
 
+    private  static String Lines = "";
+    private static Chromosome bestSolution;
 
 
     public static void initializeAlgorithm(){
-        nIterations = 1;
-        nPopulation = 100;
-        nParents = 10;
+        nIterations = 10;
+        nPopulation = 1000;
+        nParents = 100;
 
-        int nTests = 1; // TODO nTests = 20;
+        int nTests = 20; // TODO nTests = 20;
 
         readInputs();
-        buildChromosomes();
 
         for(int t = 0 ; t < nTests ; t++) {
+            buildChromosomes();
+            ArrayList<Chromosome> selectedParents = selection();// tournament selection
             iIteration = 0;
+
             do {
-                iIteration++;
-                ArrayList<Chromosome> selectedParents = selection();// tournament selection
                 ArrayList<Chromosome> offspringChromosomes = crossOver(selectedParents); // 2-point crossover
 
-                // NOTE : offspringChromosomes.size != nParents
+                System.out.println(selectedParents.size() + " " + offspringChromosomes.size());
 
-                System.out.println("\nOffSpring Chromosomes:\n");
+                mutation(offspringChromosomes);
+
+                System.out.println("\n** offspringChromosomes: **\n");
                 for (Chromosome chromosome : offspringChromosomes)
                 {
                     System.out.println(chromosome.toString());
                 }
                 System.out.println("\n===================================================\n");
 
-
-                mutation(offspringChromosomes);
                 Replacement(offspringChromosomes, selectedParents);
+                iIteration++;
+            } while (iIteration < nIterations);
+            finalOutput(selectedParents,t+1); // TODO
+        }
 
-            } while (iIteration <= nIterations);
-            finalOutput(); // TODO
+        Lines+="\n\n======================================================\n";
+        Lines+="Best Solution after running algorithm for 20 Times:\n";
+        Lines+=solutionToString(bestSolution);
+        System.out.println(Lines);
+        try {
+            WriteOnFile(OUTPUTS_FILE_PATH , Lines);
+            System.out.println("DONE");
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
-    private static void finalOutput() {
+    private static void finalOutput(ArrayList<Chromosome> selectedParents, int itteration)
+    {
+        System.out.println("The final WTA solution is:");
 
+        // 1- get the chromosome with best fitness value (minimum value)
+        Chromosome bestChromosome = selectedParents.get(0);
+        for(Chromosome x : selectedParents){
+            if(x.getFitnessValue() < bestChromosome.getFitnessValue()){
+                bestChromosome = x;
+            }
+        }
+
+        Lines+= "Output# " + itteration + ":\n";
+        Lines+= solutionToString(bestChromosome);
+        Lines+="\n=================================================\n";
+
+        if(bestSolution == null)
+        {
+            bestSolution = bestChromosome;
+        }
+        else {
+            bestSolution = bestChromosome.getFitnessValue() > bestSolution.getFitnessValue() ? bestChromosome:bestSolution;
+        }
+    }
+
+    private static String solutionToString(Chromosome chromosome)
+    {
+        String output = "";
+        output+="The final marketing budget allocation is: \n";
+
+        for (Gene gene : chromosome.getChromosomeGenes())
+        {
+            String channelName = getChannelName(chromosome.getChromosomeGenes().indexOf(gene));
+            output+=channelName+" -> "+gene.getBudget()+" k\n";
+        }
+        output+="The total profit is " + chromosome.getFitnessValue() + "\n";
+
+        return output;
+    }
+
+    static  private void WriteOnFile(String FilePath , String Lines)
+    {
+        PrintWriter out;
+        try {
+            //System.out.println(Parser.OperatorFileName);
+            out = new PrintWriter(FilePath);
+            out.println(Lines);
+            out.close();
+        }
+        catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            //e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
     }
 
     /**
@@ -75,7 +149,6 @@ public class Population {
      *      * at the end I edit the selectedParents array to include the best-so-far chromosomes for next gen
      *
      * **/
-
     static private void Replacement(ArrayList<Chromosome> offspringChromosomes, ArrayList<Chromosome> selectedParents) {
         newGenSelectionPool = new ArrayList<>();
         newGenSelectionPool.addAll(offspringChromosomes);
@@ -105,28 +178,35 @@ public class Population {
      *
      * **/
     static private void mutation(ArrayList<Chromosome> offspringChromosomes) {
-        ArrayList<Gene> ChromosomeGenes = new ArrayList<>();
-        Gene t;
-        for(Chromosome x : offspringChromosomes) {
-            ChromosomeGenes = new ArrayList<>();
-            for(Gene z: x.getChromosomeGenes()){
-                t = new Gene(z.getBudget());
-                ChromosomeGenes.add(t);
+        ArrayList<Gene> mutatedGenes = new ArrayList<>();
+        Gene tempGene;
+        for(Chromosome chromosome : offspringChromosomes) {
+
+            mutatedGenes = new ArrayList<>();
+            for(Gene gene: chromosome.getChromosomeGenes()){ // copy the genes in the mutatedGenes list
+                tempGene = new Gene(gene.getBudget());
+                mutatedGenes.add(tempGene);
             }
-            for(Gene y: ChromosomeGenes) {
+
+            for(Gene gene: mutatedGenes) { // apply mutation
                 Random r = new Random();
-                double MutProb = r.nextDouble();
-                if (MutProb <= Pm) {
-                    Bounds geneBounds = getChannelBounds(ChromosomeGenes.indexOf(y));
-                    //ChromosomeGenes.set(ChromosomeGenes.indexOf(y), uniformMutation(y, geneBounds));
-                    ChromosomeGenes.set(ChromosomeGenes.indexOf(y), nonUniformMutation(y, geneBounds));
+                float mutProb = r.nextFloat();
+
+                if (mutProb <= Pm) {
+                    Bounds geneBounds = getChannelBounds(mutatedGenes.indexOf(gene));
+                    //mutatedGenes.set(mutatedGenes.indexOf(gene), uniformMutation(gene, geneBounds));
+                    mutatedGenes.set(mutatedGenes.indexOf(gene), nonUniformMutation(gene, geneBounds));
                 }
             }
-            Chromosome newChromosome = new Chromosome(ChromosomeGenes);
-            newChromosome.setFitnessValue(newChromosome.calculateFitnessValue());
-            if(newChromosome.isFeasible()) {
-                x.setChromosomeGenes(ChromosomeGenes);
-                x.setFitnessValue(x.calculateFitnessValue());
+
+            Chromosome mutatedChromosome = new Chromosome(mutatedGenes);
+
+            mutatedChromosome.setFitnessValue(mutatedChromosome.calculateFitnessValue());
+
+            if(mutatedChromosome.isFeasible()) {
+                chromosome.setChromosomeGenes(mutatedGenes);
+
+               // chromosome.setFitnessValue(chromosome.calculateFitnessValue());
             }
         }
     }
@@ -174,44 +254,51 @@ public class Population {
     static private Gene nonUniformMutation(Gene mutationGene, Bounds GeneBound) {
         Random r1 = new Random();
         Random rand = new Random();
-        double r = rand.nextDouble();
-        double r1Prob = r1.nextDouble();
-        double valueOfMutation, newBudget;
+        float r = rand.nextFloat();
+        float r1Prob = r1.nextFloat();
+
+        float valueOfMutation, newBudget;
+
         float y;
-        if(r1Prob > 0.5){
+        if(r1Prob > 0.5f){
             y = (GeneBound.getUpperBound()*totalMarketingBudget) - mutationGene.getBudget() ;
         }else{
             y = mutationGene.getBudget() - (GeneBound.getLowerBound()*totalMarketingBudget);
         }
+
         Random r2 = new Random();
-        double genPower = (1-iIteration)/(double)nIterations;
-        double rPower = Math.pow(genPower, b);
-        valueOfMutation = y*(1-(Math.pow(rPower,r)));
-        if(r1Prob > 0.5){
+
+        float genPower = 1-(iIteration/(float)nIterations);
+
+        float rPower = (float) Math.pow(genPower, b);
+        valueOfMutation = (float) (y*(1-(Math.pow(rPower,r))));
+
+        if(r2.nextFloat() > 0.5f){
             newBudget = mutationGene.getBudget() + valueOfMutation;
         }else{
             newBudget = mutationGene.getBudget() - valueOfMutation;
         }
-        mutationGene.setBudget((float)newBudget);
+
+        mutationGene.setBudget(newBudget);
+
         return  mutationGene;
     }
 
     /**
-     * @implNote 2-point crossover
-     * @return ArrayList<Chromosome>, contains the result of cross over between the selected parents arraylist
+     * @param selectedParents
      *
-     *      * @implNote
-     *      * 2-point crossover :
-     *      * 1- two crossover points are picked randomly from the parent chromosomes.
-     *      * 2- The bits in between the two points are swapped between the parent organisms.
-     *      *
-     *      * @return ArrayList<Chromosome>, contains the result of cross over between the selected parents arraylist
+     * @implNote
+     * 2-point crossover :
+     * <p>
+     * <li>1- two crossover points are picked randomly from the parent chromosomes.</ul>
+     * <li>2- The bits in between the two points are swapped between the parent organisms.</ul>
      *
+     *  @return {@code  ArrayList<Chromosome>} offspringChromosomes, contains the result of cross over between the selected parents arraylist
      * **/
     static private ArrayList<Chromosome> crossOver(ArrayList<Chromosome> selectedParents) {
         ArrayList<Chromosome> offspringChromosomes = new ArrayList<Chromosome>();
 
-        for(int i = 0  ; i <nParents/2 ; i+=2) // cross over between i and i+1
+        for(int i = 0  ; i < nParents ; i+=2) // cross over between i and i+1
         {
             Random r = new Random();
             int xc = r.nextInt(selectedParents.size());
@@ -222,7 +309,19 @@ public class Population {
                 //perform crossover at Xc using  i and i+1 parents
                 ArrayList<Chromosome> crossoverOutput = selectedParents.get(i)
                         .crossOver(selectedParents.get(i+1), xc);
-                offspringChromosomes.addAll(crossoverOutput);
+
+                if(crossoverOutput.get(0).isFeasible()){
+                    offspringChromosomes.add(crossoverOutput.get(0));
+                }
+                else {
+                    offspringChromosomes.add(selectedParents.get(i));
+                }
+                if(crossoverOutput.get(1).isFeasible()){
+                    offspringChromosomes.add(crossoverOutput.get(1));
+                }
+                else {
+                    offspringChromosomes.add(selectedParents.get(i+1));
+                }
             }
             else //then No CrossOver
             {
@@ -262,22 +361,25 @@ public class Population {
 
         for(int i = 0 ; i < nPopulation ; i++) // for each chromosome generate random genes.
         {
-            float remainingBudget = totalMarketingBudget;
             ArrayList<Gene> genes = new ArrayList<Gene>();
 
             for(int channel = 0 ; channel < nMarketingChannels; channel++) // generate random genes
             {
                 Bounds bounds = getChannelBounds(channel);
-                float max = bounds.hasUpper ? (bounds.getUpperBound()*remainingBudget): remainingBudget;
-                float min = bounds.hasLower ? (bounds.getLowerBound()*remainingBudget): 0.0f;
+
+                float max = bounds.getUpperBound()*totalMarketingBudget;
+                float min = bounds.getLowerBound()*totalMarketingBudget;
 
                 float budget =   (float)Math.random() * (max - min) + min;
                 genes.add(new Gene(budget));
-                remainingBudget -= budget;
             }
 
             Chromosome chromosome = new Chromosome(genes); // in the constructor, the fitness value evaluated also
-            populationChromosomes.add(chromosome);
+            if(!chromosome.isFeasible()){
+                i--;
+            }else {
+                populationChromosomes.add(chromosome);
+            }
         }
     }
 
@@ -336,4 +438,3 @@ public class Population {
     }
 
 }
-

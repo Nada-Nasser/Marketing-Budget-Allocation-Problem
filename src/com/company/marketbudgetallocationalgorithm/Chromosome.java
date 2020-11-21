@@ -34,6 +34,7 @@ public class Chromosome {
 
     public void setChromosomeGenes(ArrayList<Gene> chromosomeGenes) {
         this.genes = chromosomeGenes;
+        this.fitnessValue = calculateFitnessValue();
     }
 
     public float getFitnessValue() {
@@ -98,19 +99,18 @@ public class Chromosome {
         for (Gene gene : genes)
         {
             Bounds bounds = Population.getChannelBounds(geneIndex);
-            if (bounds.hasUpper)
-                if (gene.getBudget() > bounds.getUpperBound()*totalBudget)
-                    return false;
+            if (gene.getBudget() > bounds.getUpperBound()*totalBudget)
+                   return false;
 
-            if (bounds.hasLower)
-                if (gene.getBudget() < bounds.getLowerBound()*totalBudget)
-                    return false;
+           if (gene.getBudget() < bounds.getLowerBound()*totalBudget)
+               return false;
 
-            sumBudget+= gene.getBudget();
-            if(sumBudget > totalBudget)
-                return false;
+           sumBudget+= gene.getBudget();
 
-            geneIndex++;
+           if(sumBudget > totalBudget)
+               return false;
+
+           geneIndex++;
         }
         return true;
     }
