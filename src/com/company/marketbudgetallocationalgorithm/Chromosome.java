@@ -59,7 +59,7 @@ public class Chromosome {
                 + "fitnessValue=" + fitnessValue + "\n" + "is Feasible = " + isFeasible() + "\n";
     }
 
-    public ArrayList<Chromosome> crossOver(Chromosome other , int x) // TODO crossOver
+    public ArrayList<Chromosome> crossOver(Chromosome other)
     {
         int[] nPoints; // length = 2
         nPoints = ThreadLocalRandom.current().ints(0, 4).distinct().limit(2).toArray();

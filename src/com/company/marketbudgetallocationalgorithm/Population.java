@@ -12,7 +12,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Population {
 
     static final String OUTPUTS_FILE_PATH = "outputs.txt";
-    final String BEST_OUTPUT_FILE_PATH = "best_output.txt";
 
     private static int nPopulation;
     private static int nParents;
@@ -36,11 +35,11 @@ public class Population {
 
 
     public static void initializeAlgorithm(){
-        nIterations = 10;
-        nPopulation = 1000;
-        nParents = 100;
+        nIterations = 100;
+        nPopulation = 2000;
+        nParents = 200;
 
-        int nTests = 20; // TODO nTests = 20;
+        int nTests = 20;
 
         readInputs();
 
@@ -66,11 +65,10 @@ public class Population {
                 Replacement(offspringChromosomes, selectedParents);
                 iIteration++;
             } while (iIteration < nIterations);
-            finalOutput(selectedParents,t+1); // TODO
+            finalOutput(selectedParents,t+1);
         }
 
-        Lines+="\n\n======================================================\n";
-        Lines+="Best Solution after running algorithm for 20 Times:\n";
+        Lines+="\nBest Solution after running algorithm for 20 Times:\n";
         Lines+=solutionToString(bestSolution);
         System.out.println(Lines);
         try {
@@ -133,8 +131,7 @@ public class Population {
             out.close();
         }
         catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            //e.printStackTrace();
+            e.printStackTrace();
             System.out.println(e.getMessage());
         }
     }
@@ -301,14 +298,13 @@ public class Population {
         for(int i = 0  ; i < nParents ; i+=2) // cross over between i and i+1
         {
             Random r = new Random();
-            int xc = r.nextInt(selectedParents.size());
             float rc =  r.nextFloat();
 
             if(rc <= Pc) //then Cross over occurs
             {
                 //perform crossover at Xc using  i and i+1 parents
                 ArrayList<Chromosome> crossoverOutput = selectedParents.get(i)
-                        .crossOver(selectedParents.get(i+1), xc);
+                        .crossOver(selectedParents.get(i+1));
 
                 if(crossoverOutput.get(0).isFeasible()){
                     offspringChromosomes.add(crossoverOutput.get(0));
