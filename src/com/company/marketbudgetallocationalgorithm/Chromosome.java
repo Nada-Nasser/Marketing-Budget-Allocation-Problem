@@ -102,7 +102,7 @@ public class Chromosome {
             if (gene.getBudget() > bounds.getUpperBound()*totalBudget)
                    return false;
 
-           if (gene.getBudget() < bounds.getLowerBound()*totalBudget)
+           if (gene.getBudget() < bounds.getLowerBound())
                return false;
 
            sumBudget+= gene.getBudget();

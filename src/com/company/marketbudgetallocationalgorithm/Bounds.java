@@ -4,14 +4,10 @@ public class Bounds {
 
     private float upperBound;
     private float lowerBound;
-    boolean hasUpper;
-    boolean hasLower;
 
-    public Bounds(float lowerBound, float upperBound , boolean hasLower , boolean hasUpper) {
+    public Bounds(float lowerBound, float upperBound) {
         this.upperBound = upperBound;
         this.lowerBound = lowerBound;
-        this.hasUpper = hasUpper;
-        this.hasLower = hasLower;
     }
 
     @Override
@@ -19,8 +15,6 @@ public class Bounds {
         return "Bounds{" +
                 "lowerBound=" + lowerBound +
                 ", upperBound=" + upperBound +
-                ", hasLower=" + hasLower +
-                ", hasUpper=" + hasUpper +
                 '}';
     }
 

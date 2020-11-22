@@ -1,13 +1,10 @@
 package com.company.marketbudgetallocationalgorithm;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+
+
 
 public class Population {
 
@@ -35,9 +32,9 @@ public class Population {
 
 
     public static void initializeAlgorithm(){
-        nIterations = 100;
-        nPopulation = 2000;
-        nParents = 200;
+        nIterations = 10;
+        nPopulation = 1000;
+        nParents = 100;
 
         int nTests = 20;
 
@@ -53,7 +50,9 @@ public class Population {
 
                 System.out.println(selectedParents.size() + " " + offspringChromosomes.size());
 
-                mutation(offspringChromosomes);
+                if(t > nTests/2) {
+                    mutation(offspringChromosomes , true);
+                }
 
                 System.out.println("\n** offspringChromosomes: **\n");
                 for (Chromosome chromosome : offspringChromosomes)
@@ -174,7 +173,7 @@ public class Population {
      *      * 4- send the selected gene to perform mutation to either uniform or nonuniform mutation functions.
      *
      * **/
-    static private void mutation(ArrayList<Chromosome> offspringChromosomes) {
+    static private void mutation(ArrayList<Chromosome> offspringChromosomes , boolean isUniformMutation) {
         ArrayList<Gene> mutatedGenes = new ArrayList<>();
         Gene tempGene;
         for(Chromosome chromosome : offspringChromosomes) {
@@ -191,8 +190,9 @@ public class Population {
 
                 if (mutProb <= Pm) {
                     Bounds geneBounds = getChannelBounds(mutatedGenes.indexOf(gene));
-                    //mutatedGenes.set(mutatedGenes.indexOf(gene), uniformMutation(gene, geneBounds));
-                    mutatedGenes.set(mutatedGenes.indexOf(gene), nonUniformMutation(gene, geneBounds));
+
+                    mutatedGenes.set(mutatedGenes.indexOf(gene),
+                            isUniformMutation ? nonUniformMutation(gene, geneBounds):uniformMutation(gene, geneBounds));
                 }
             }
 
@@ -202,8 +202,6 @@ public class Population {
 
             if(mutatedChromosome.isFeasible()) {
                 chromosome.setChromosomeGenes(mutatedGenes);
-
-               // chromosome.setFitnessValue(chromosome.calculateFitnessValue());
             }
         }
     }
@@ -229,7 +227,7 @@ public class Population {
             r2Prob = r2.nextFloat() * (delta);
             newBudget = mutationGene.getBudget() + r2Prob;
         }else{
-            delta = mutationGene.getBudget() - (GeneBound.getLowerBound()*totalMarketingBudget);
+            delta = mutationGene.getBudget() - (GeneBound.getLowerBound());
             r2Prob = r2.nextFloat() * (delta);
             newBudget = mutationGene.getBudget() - r2Prob;
         }
@@ -260,7 +258,7 @@ public class Population {
         if(r1Prob > 0.5f){
             y = (GeneBound.getUpperBound()*totalMarketingBudget) - mutationGene.getBudget() ;
         }else{
-            y = mutationGene.getBudget() - (GeneBound.getLowerBound()*totalMarketingBudget);
+            y = mutationGene.getBudget() - (GeneBound.getLowerBound());
         }
 
         Random r2 = new Random();
@@ -364,7 +362,7 @@ public class Population {
                 Bounds bounds = getChannelBounds(channel);
 
                 float max = bounds.getUpperBound()*totalMarketingBudget;
-                float min = bounds.getLowerBound()*totalMarketingBudget;
+                float min = bounds.getLowerBound();
 
                 float budget =   (float)Math.random() * (max - min) + min;
                 genes.add(new Gene(budget));
@@ -405,9 +403,10 @@ public class Population {
         {
            String l = in.next();
            String u = in.next();
-           float lower = l.equalsIgnoreCase("x")? 0 : Float.parseFloat(l)/100;
+
+           float lower = l.equalsIgnoreCase("x")? 0 : Float.parseFloat(l);
            float upper = u.equalsIgnoreCase("x")? 1 : Float.parseFloat(u)/100;
-           Bounds bounds = new Bounds(lower,upper,!l.equalsIgnoreCase("x"),!u.equalsIgnoreCase("x"));
+           Bounds bounds = new Bounds(lower,upper);
 
            investmentChannelArrayList.get(i).setBounds(bounds);
         }
